@@ -1,0 +1,48 @@
+---
+- name: create virtual environment
+  command: python3 -m venv venv
+  args:
+    chdir: "{{ repo_clone_path }}"
+    creates: "{{ repo_clone_path }}/venv"
+
+- name: install python dependencies
+  pip:
+    requirements: "{{ repo_clone_path }}/requirements.txt"
+    virtualenv: "{{ repo_clone_path }}/venv"
+
+- name: make migrations
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py makemigrations"
+  args:
+    chdir: "{{ repo_clone_path }}"
+
+- name: run migrations
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py migrate"
+  args:
+    chdir "{{ repo_clone_path }}"
+
+- name: collect static files
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py collectstatic --noinput"
+  args:
+    chdir "{{ repo_clone_path }}"  
+
+- name: create django superuser
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py createsuperuser --noinput --email=admin@mail.ru --username=admin"
+  environment:
+    DJANGO_SUPERUSER_PASSWORD: "1234"
+  args:
+    chdir: "{{ repo_clone_path }}"
+    creates: "{{ repo_clone_path }}/db.sqlite3"
+
+- name: start django server
+  shell: "{{ repo_clone_path }}/venv/bin/python manage.py runserver 0.0.0.0:8000"
+  args:
+    chdir: "{{ repo_clone_path }}"
+  async: 0
+  poll: 0
+  register: django_server_job
+
+- name: wait for start
+  wait_for:
+    host: 127.0.0.1
+    port: 8000
+    timeout: 30

@@ -1,0 +1,6 @@
+---
+- name: update python
+  hosts: all
+  become: yes
+  roles:
+    - python_update

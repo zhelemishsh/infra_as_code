@@ -1,0 +1,6 @@
+---
+- name: clone django lib repo
+  hosts: app
+  become: yes
+  roles:
+    - git_clone

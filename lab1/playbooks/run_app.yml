@@ -1,0 +1,6 @@
+---
+- name: run app
+  hosts: app
+  become: yes
+  roles: 
+    - app
