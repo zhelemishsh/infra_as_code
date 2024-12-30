@@ -1,0 +1,76 @@
+---
+- name: clone repo from github
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ repo_clone_path }}"
+    version: main
+
+- name: install python for venv
+  apt:
+    name:
+      - python3.10
+      - python3.10-venv
+    state: present
+    update_cache: yes
+
+- name: create virtual environment
+  command: /usr/bin/python3.10 -m venv {{ repo_clone_path }}/venv
+  args:
+    creates: "{{ repo_clone_path }}/venv"
+
+- name: install python dependencies
+  pip:
+    requirements: "{{ repo_clone_path }}/requirements.txt"
+    virtualenv: "{{ repo_clone_path }}/venv"
+    virtualenv_python: /usr/bin/python3.10
+
+- name: make migrations
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py makemigrations"
+  args:
+    chdir: "{{ repo_clone_path }}"
+
+- name: run migrations
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py migrate"
+  args:
+    chdir: "{{ repo_clone_path }}"
+
+- name: collect static files
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py collectstatic --noinput"
+  args:
+    chdir: "{{ repo_clone_path }}"  
+
+- name: check django superuser exists
+  command: >
+    {{ repo_clone_path }}/venv/bin/python manage.py shell -c
+    "from django.contrib.auth import get_user_model; exit(0) if get_user_model().objects.filter(username='admin').exists() else exit(1)"
+  ignore_errors: true
+  register: superuser_exists
+  args:
+    chdir: "{{ repo_clone_path }}"
+
+- name: create django superuser
+  command: "{{ repo_clone_path }}/venv/bin/python manage.py createsuperuser --noinput --email=admin@mail.ru --username=admin"
+  environment:
+    DJANGO_SUPERUSER_PASSWORD: "1234"
+  args:
+    chdir: "{{ repo_clone_path }}"
+  when: superuser_exists.rc != 0
+
+- name: start django server
+  shell: "{{ repo_clone_path }}/venv/bin/python manage.py runserver 127.0.0.1:8000"
+  args:
+    chdir: "{{ repo_clone_path }}"
+  async: 300
+  poll: 0
+
+- name: wait for start
+  wait_for:
+    host: 127.0.0.1
+    port: 8000
+    timeout: 30
+
+- name: check server running
+  uri:
+    url: http://127.0.0.1:8000
+    return_content: yes
+  register: app_response

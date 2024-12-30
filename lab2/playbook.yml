@@ -1,0 +1,7 @@
+---
+- name: run app
+  hosts: app
+  become: yes
+  roles: 
+    - docker
+    - app
