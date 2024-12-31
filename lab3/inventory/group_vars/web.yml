@@ -1,0 +1,8 @@
+---
+nginx_site_config_src: "templates/nginx.conf.j2"
+nginx_site_config_available: "/etc/nginx/sites-available/default"
+nginx_site_config_enabled: "/etc/nginx/sites-enabled/default" 
+
+nginx_server_name: "192.168.56.202"
+nginx_static_path: "/django-app/catalog/static/"
+nginx_proxy_pass: "192.168.56.201:8000"
