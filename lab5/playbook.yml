@@ -1,0 +1,18 @@
+---
+- name: Start PostgreSQL master
+  hosts: master
+  become: yes
+  roles:
+    - role: postgres
+      vars:
+         postgres_role: "master"
+
+- name: Start PostgreSQL replica
+  hosts: replica
+  become: yes
+  roles:
+    - role: postgres
+      vars:
+        postgres_role: "replica"
+        postgres_master_host: "192.168.56.201"
+

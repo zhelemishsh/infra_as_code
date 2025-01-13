@@ -1,0 +1,8 @@
+postgres_users:
+  - name: denis
+    password: denis_pass
+
+postgres_databases: 
+  - name: test
+    owner: denis
+ 

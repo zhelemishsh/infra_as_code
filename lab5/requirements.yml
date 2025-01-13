@@ -1,0 +1,4 @@
+roles:
+  - src: git+https://gitlab.com/ansible_roles9964801/postgres.git
+    version: main
+    name: postgres
